@@ -3,13 +3,7 @@ const std = @import("std");
 const idt = @import("internals/idt.zig");
 const limine = @import("limine.zig");
 const log = @import("log.zig");
-
-pub fn hcf() noreturn {
-    log.debug("Reached halt and catch fire", .{});
-    while (true) {
-        asm volatile ("hlt");
-    }
-}
+const arch = @import("internals/arch.zig");
 
 pub export fn _start() noreturn {
     log.init();
@@ -25,7 +19,7 @@ pub export fn _start() noreturn {
     const fb = has_framebuffers.?[0];
 
     idt.load();
-    idt.enable();
+    arch.enableInterrupt();
 
     { // Trigger a division by zero
         @setRuntimeSafety(false);
@@ -50,7 +44,7 @@ fn panicHandler(msg: []const u8, first_address: ?usize) noreturn {
     while (st_it.next()) |stack| : (i += 1) {
         log.err(" - #{d:0>2} - 0x{X:0>16}", .{ i, stack });
     }
-    hcf();
+    arch.hcf();
 }
 
 pub const panic = std.debug.FullPanic(panicHandler);

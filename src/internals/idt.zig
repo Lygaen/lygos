@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const log = @import("../log.zig");
+const arch = @import("arch.zig");
 
 const Entry = packed struct(u128) {
     offset_l: u16,
@@ -29,6 +30,14 @@ const ItemIndex = enum(u8) {
     double_fault = 0x08,
 };
 
+const InterruptFrame = struct {
+    rip: u64,
+    cs: u64,
+    rflags: u64,
+    rsp: u64,
+    ss: u64,
+};
+
 var __idt: [256]Entry = @splat(std.mem.zeroes(Entry));
 
 pub fn registerEntry(index: ItemIndex, func: *const anyopaque) void {
@@ -37,7 +46,7 @@ pub fn registerEntry(index: ItemIndex, func: *const anyopaque) void {
 
     ptr.* = std.mem.zeroes(Entry);
 
-    ptr.selector = 0x08;
+    ptr.selector = 0x28;
     ptr.flags = 0x8E; // 0x8F -> trap, 0x8E -> int
 
     ptr.offset_l = @truncate(addr);
@@ -45,8 +54,14 @@ pub fn registerEntry(index: ItemIndex, func: *const anyopaque) void {
     ptr.offset_h = @truncate(addr >> 32);
 }
 
-pub export fn divisor() callconv(.{ .x86_64_interrupt = .{} }) void {
-    while (true) {}
+pub export fn divisor(frame: *InterruptFrame) callconv(.{ .x86_64_interrupt = .{} }) void {
+    log.err("Interrupt called : 'division by zero', frame :", .{});
+
+    inline for (std.meta.fields(InterruptFrame)) |field| {
+        log.err(" - {s: >6}: 0x{X:0>16}", .{ field.name, @field(frame, field.name) });
+    }
+
+    arch.hcf();
 }
 
 var __idt_register: LIDTPayload = undefined;
@@ -58,18 +73,5 @@ pub fn load() void {
         .addr = @intFromPtr(&__idt),
     };
 
-    asm volatile ("lidt %[val]"
-        :
-        : [val] "m" (&__idt_register),
-        : .{
-          .memory = true,
-        });
-}
-
-pub fn enable() void {
-    asm volatile ("sti");
-}
-
-pub fn disable() void {
-    asm volatile ("cli");
+    arch.loadIDT(@intFromPtr(&__idt_register));
 }

@@ -150,10 +150,6 @@ fn qemuStep(b: *std.Build) void {
 
     const qemu_run = b.addSystemCommand(&.{
         "qemu-system-x86_64",
-        "-d",
-        "int",
-        "-no-reboot",
-        "-no-shutdown",
         "-M",
         "q35",
         "-serial", // COM1 bound for logging
