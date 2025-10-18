@@ -1,0 +1,17 @@
+.{
+    .name = .lygos,
+    .version = "0.0.1",
+    .dependencies = .{
+        .limine = .{
+            .url = "https://github.com/limine-bootloader/limine/archive/refs/tags/v10.1.0-binary.tar.gz",
+            .hash = "N-V-__8AACgeSAAypi3oSlCNVw-Rw1mpJk7hUl3qxpFnFGrO",
+        },
+        .ovmf = .{
+            .url = "https://github.com/osdev0/edk2-ovmf-nightly/releases/download/nightly-2025-10-08/edk2-ovmf.tar.xz",
+            .hash = "N-V-__8AAAAARAFi7Kob_ZGJn22g4vt8ztz-KDe91jMpAyZW",
+        },
+    },
+    .minimum_zig_version = "0.16.0-dev.368+2a97e0af6",
+    .paths = .{""},
+    .fingerprint = 0xea26080cfdb62540,
+}
