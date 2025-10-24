@@ -20,14 +20,52 @@ const LIDTPayload = packed struct(u80) {
 
 const ItemIndex = enum(u8) {
     divide_error = 0x00,
-    debug_exception = 0x01,
-    nmi_interrupt = 0x02,
-    breakpoint = 0x03,
-    overflow = 0x04,
-    range_exceeded = 0x05,
-    invalid_opcode = 0x06,
-    no_math_coprocessor = 0x07,
-    double_fault = 0x08,
+    debug_exception,
+    nmi_interrupt,
+    breakpoint,
+    overflow,
+    range_exceeded,
+    invalid_opcode,
+    no_math_coprocessor,
+    double_fault,
+    coprocessor_segment_overrun,
+    invalid_tss,
+    segment_not_present,
+    stack_segment_fault,
+    general_protection,
+    page_fault,
+    __intel_reserved,
+    floating_point_error,
+    alignment_check,
+    machine_check,
+    simd_floating_point_exception,
+    virtualization_exception,
+    control_protection_exception,
+
+    const __errors_bound = [_]ItemIndex{
+        .double_fault,
+        .invalid_tss,
+        .segment_not_present,
+        .stack_segment_fault,
+        .general_protection,
+        .page_fault,
+        .alignment_check,
+        .control_protection_exception,
+    };
+
+    pub fn hasError(self: ItemIndex) bool {
+        return std.mem.containsAtLeastScalar(ItemIndex, &__errors_bound, 1, self);
+    }
+
+    const __trap_bound = [_]ItemIndex{
+        .debug_exception,
+        .breakpoint,
+        .overflow,
+    };
+
+    pub fn isTrap(self: ItemIndex) bool {
+        return std.mem.containsAtLeastScalar(ItemIndex, &__trap_bound, 1, self);
+    }
 };
 
 const InterruptFrame = struct {
@@ -47,26 +85,68 @@ pub fn registerEntry(index: ItemIndex, func: *const anyopaque) void {
     ptr.* = std.mem.zeroes(Entry);
 
     ptr.selector = 0x28;
-    ptr.flags = 0x8E; // 0x8F -> trap, 0x8E -> int
+
+    // 0x8F -> trap, 0x8E -> int
+    if (index.isTrap()) {
+        ptr.flags = 0x8F;
+    } else {
+        ptr.flags = 0x8F;
+    }
 
     ptr.offset_l = @truncate(addr);
     ptr.offset_m = @truncate(addr >> 16);
     ptr.offset_h = @truncate(addr >> 32);
 }
 
-pub export fn divisor(frame: *InterruptFrame) callconv(.{ .x86_64_interrupt = .{} }) void {
-    log.err("Interrupt called : 'division by zero', frame :", .{});
+fn interruptHandler(comptime index: ItemIndex) *const anyopaque {
+    if (!@inComptime())
+        @compileError("This must be called at comptime ! Add a comptime prefix at call site.");
 
-    inline for (std.meta.fields(InterruptFrame)) |field| {
-        log.err(" - {s: >6}: 0x{X:0>16}", .{ field.name, @field(frame, field.name) });
+    var ptr: *const anyopaque = undefined;
+
+    if (index.hasError()) {
+        ptr = struct {
+            pub fn handler(frame: *InterruptFrame) callconv(.{ .x86_64_interrupt = .{} }) void {
+                log.err("Interrupt called : '{s}', frame :", .{@tagName(index)});
+
+                inline for (std.meta.fields(InterruptFrame)) |field| {
+                    log.err(" - {s: >6}: 0x{X:0>16}", .{ field.name, @field(frame, field.name) });
+                }
+
+                if (!index.isTrap())
+                    arch.hcf();
+            }
+        }.handler;
+    } else {
+        ptr = struct {
+            pub fn handler(frame: *InterruptFrame, err: u64) callconv(.{ .x86_64_interrupt = .{} }) void {
+                log.err("Interrupt called : '{s}' (err: 0x{X}), frame :", .{ @tagName(index), err });
+
+                inline for (std.meta.fields(InterruptFrame)) |field| {
+                    log.err(" - {s: >6}: 0x{X:0>16}", .{ field.name, @field(frame, field.name) });
+                }
+
+                if (!index.isTrap())
+                    arch.hcf();
+            }
+        }.handler;
     }
 
-    arch.hcf();
+    @export(ptr, .{
+        .linkage = .strong,
+        .name = "handler_" ++ @tagName(index),
+    });
+
+    return ptr;
 }
 
 var __idt_register: LIDTPayload = undefined;
 pub fn load() void {
-    registerEntry(.divide_error, &divisor);
+    inline for (@typeInfo(ItemIndex).@"enum".fields) |field| {
+        const val: ItemIndex = @enumFromInt(field.value);
+
+        registerEntry(val, comptime interruptHandler(val));
+    }
 
     __idt_register = .{
         .size = (__idt.len * @sizeOf(Entry)) - 1,
