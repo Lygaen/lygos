@@ -49,6 +49,9 @@ pub fn build(b: *std.Build) void {
         kernel_exe.link_function_sections = true;
         kernel_exe.link_data_sections = true;
 
+        const check_step = b.step("check", "Check if the kernel compiles");
+        check_step.dependOn(&kernel_exe.step);
+
         genIso(b, kernel_exe);
     }
 

@@ -114,7 +114,7 @@ fn interruptHandler(comptime index: ItemIndex) *const anyopaque {
                 }
 
                 if (!index.isTrap())
-                    arch.hcf();
+                    @panic("Non-trap interrupt called");
             }
         }.handler;
     } else {
@@ -127,7 +127,7 @@ fn interruptHandler(comptime index: ItemIndex) *const anyopaque {
                 }
 
                 if (!index.isTrap())
-                    arch.hcf();
+                    @panic("Non-trap interrupt called");
             }
         }.handler;
     }

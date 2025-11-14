@@ -1,4 +1,7 @@
 const std = @import("std");
+const builtin = @import("builtin");
+
+const arch = @import("internals/arch.zig");
 
 pub fn init() void {
     const ports: []const u16 = &.{COM1};
@@ -91,3 +94,98 @@ fn inb(port: u16) u8 {
         : [port] "{dx}" (port),
     );
 }
+
+/// Stolen from STD Lib, platform dependent code pruned
+const StackIterator = union(enum) {
+    /// We will first report the current PC of this `CpuContextPtr`, then we will switch to a
+    /// different strategy to actually unwind.
+    ctx_first: std.debug.CpuContextPtr,
+    /// Naive frame-pointer-based unwinding. Very simple, but typically unreliable.
+    fp: usize,
+
+    /// It is important that this function is marked `inline` so that it can safely use
+    /// `@frameAddress` and `cpu_context.Native.current` as the caller's stack frame and
+    /// our own are one and the same.
+    ///
+    /// `opt_context_ptr` must remain valid while the `StackIterator` is used.
+    inline fn init(opt_context_ptr: std.debug.CpuContextPtr) StackIterator {
+        return .{ .ctx_first = opt_context_ptr };
+    }
+
+    const Result = union(enum) {
+        /// A stack frame has been found; this is the corresponding return address.
+        frame: usize,
+        /// The end of the stack has been reached.
+        end,
+    };
+
+    fn next(it: *StackIterator) Result {
+        switch (it.*) {
+            .ctx_first => |context_ptr| {
+                it.* = .{ .fp = context_ptr.getFp() };
+                return .{ .frame = context_ptr.getPc() +| 1 };
+            },
+            .fp => |fp| {
+                if (fp == 0) return .end; // we reached the "sentinel" base pointer
+
+                const bp_addr = applyOffset(fp, 0) orelse return .end;
+                const ra_addr = applyOffset(fp, @sizeOf(usize)) orelse return .end;
+
+                if (bp_addr == 0 or !std.mem.isAligned(bp_addr, @alignOf(usize)) or
+                    ra_addr == 0 or !std.mem.isAligned(ra_addr, @alignOf(usize)))
+                {
+                    // This isn't valid, but it most likely indicates end of stack.
+                    return .end;
+                }
+
+                const bp_ptr: *const usize = @ptrFromInt(bp_addr);
+                const ra_ptr: *const usize = @ptrFromInt(ra_addr);
+                const bp = applyOffset(bp_ptr.*, 0) orelse return .end;
+
+                // If the stack grows downwards, `bp > fp` should always hold; conversely, if it
+                // grows upwards, `bp < fp` should always hold. If that is not the case, this
+                // frame is invalid, so we'll treat it as though we reached end of stack. The
+                // exception is address 0, which is a graceful end-of-stack signal, in which case
+                // *this* return address is valid and the *next* iteration will be the last.
+                if (bp != 0 and switch (comptime builtin.target.stackGrowth()) {
+                    .down => bp <= fp,
+                    .up => bp >= fp,
+                }) return .end;
+
+                it.fp = bp;
+                const ra = std.debug.stripInstructionPtrAuthCode(ra_ptr.*);
+                if (ra <= 1) return .end;
+                return .{ .frame = ra };
+            },
+        }
+    }
+
+    fn applyOffset(addr: usize, comptime off: comptime_int) ?usize {
+        if (off >= 0) return std.math.add(usize, addr, off) catch return null;
+        return std.math.sub(usize, addr, -off) catch return null;
+    }
+};
+
+fn panicHandler(msg: []const u8, first_address: ?usize) noreturn {
+    @branchHint(.cold);
+
+    const cpu_ctx: std.debug.cpu_context.Native = .current();
+    var st_it: StackIterator = .init(&cpu_ctx);
+    if (first_address) |addr| {
+        err("Panic at 0x{X:0>16} : {s}", .{ addr, msg });
+    } else {
+        err("Panic : {s}", .{msg});
+    }
+
+    var i: usize = 0;
+    var ptr = st_it.next();
+
+    while (ptr != .end) : (i += 1) {
+        err(" - #{d:0>2} - 0x{X:0>16}", .{ i, ptr.frame });
+
+        ptr = st_it.next();
+    }
+    arch.hcf();
+}
+
+pub const panic = std.debug.FullPanic(panicHandler);
