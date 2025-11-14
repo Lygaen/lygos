@@ -12,7 +12,7 @@ An `x86_64` OS made with ❤️ in Zig ! All my questions were answered by going
 
 Note that this is simply a fun education project and should, in no way, be considered serious and used for any other things than research / education purposes.
 
-AIs will not be allowed in this project, wether it be in PRs or code (aka. in any form). This is meant to be an education project, as such contribute to the project only if you want to learn about OS by reading through documentation. You are free to fork and do whathever you want with the repo (MIT licensed).
+AIs will not be allowed in this project, whether it be in PRs or code (aka. in any form). This is meant to be an education project, as such contribute to the project only if you want to learn about OSes by reading through documentation. You are free to fork and do whathever you want with the repo (see LICENSE).
 
 ## Run & Build
 First of all, clone the repository :
