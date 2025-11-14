@@ -1,10 +1,12 @@
 # Lygos
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://brainmade.org/white-logo.svg">
   <source media="(prefers-color-scheme: light)" srcset="https://brainmade.org/black-logo.svg">
   <img align="right" width="128" height="40" alt="Brainmade mark". src="https://brainmade.org/black-logo.svg">
 </picture>
+
+![GitHub License](https://img.shields.io/github/license/Lygaen/lygos?style=for-the-badge)
+![Zig](https://img.shields.io/badge/Zig-%23F7A41D.svg?style=for-the-badge&logo=zig&logoColor=white)
 
 An `x86_64` OS made with ❤️ in Zig ! No LLMs or any chatbot even for questions were used in this project (It is an educational project after all). All my questions were answered by going through the useful [wiki.osdev.org](https://wiki.osdev.org/Expanded_Main_Page) or the [osdev.wiki](https://osdev.wiki/wiki/Expanded_Main_Page).
 
