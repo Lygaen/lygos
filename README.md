@@ -8,7 +8,7 @@
 ![GitHub License](https://img.shields.io/github/license/Lygaen/lygos?style=for-the-badge)
 ![Zig](https://img.shields.io/badge/Zig-%23F7A41D.svg?style=for-the-badge&logo=zig&logoColor=white)
 
-An `x86_64` OS made with ❤️ in Zig ! No LLMs or any chatbot even for questions were used in this project (It is an educational project after all). All my questions were answered by going through the useful [wiki.osdev.org](https://wiki.osdev.org/Expanded_Main_Page) or the [osdev.wiki](https://osdev.wiki/wiki/Expanded_Main_Page).
+An `x86_64` OS made with ❤️ in Zig ! All my questions were answered by going through the useful [wiki.osdev.org](https://wiki.osdev.org/Expanded_Main_Page) or the [osdev.wiki](https://osdev.wiki/wiki/Expanded_Main_Page).
 
 Note that this is simply a fun education project and should, in no way, be considered serious and used for any other things than research / education purposes.
 
