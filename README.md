@@ -1,6 +1,12 @@
 # Lygos
 
-An `x86_64` OS made with ❤️ in Zig !
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://brainmade.org/white-logo.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://brainmade.org/black-logo.svg">
+  <img align="right" width="128" height="40" alt="Brainmade mark". src="https://brainmade.org/black-logo.svg">
+</picture>
+
+An `x86_64` OS made with ❤️ in Zig ! No LLMs or any chatbot even for questions were used in this project (It is an educational project after all). All my questions were answered by going through the useful [wiki.osdev.org](https://wiki.osdev.org/Expanded_Main_Page) or the [osdev.wiki](https://osdev.wiki/wiki/Expanded_Main_Page).
 
 Note that this is simply a fun education project and should, in no way, be considered serious and used for any other things than research / education purposes.
 
@@ -11,12 +17,12 @@ git clone https://github.com/Lygaen/lygos
 cd lygos
 ```
 
-You can then **build the project**, generating an `.iso` file, **make sure to have `xorriso` on PATH** :
+You can then **build the project**, generating an `.iso` file, **make sure to have [xorriso](https://www.gnu.org/software/xorriso/) on PATH** :
 ```sh
 zig build
 ```
 
-If you want to run the app on QEMU, **make sure to have `qemu-system-x86_64` on PATH** :
+If you want to run the app on [QEMU](https://www.qemu.org/), **make sure to have `qemu-system-x86_64` on PATH** :
 ```sh
 zig build run
 ```
@@ -27,6 +33,7 @@ zig build run -Ddebug-qemu
 ```
 
 Which will open a gdb-compatible server on port `1234`, which you can connect to using you favorite debugger.
+
 If you are using GDB, you can use the provided `.gdbinit` file to automatically connect and set breakpoints :
 ```sh
 gdb -x .gdbinit
@@ -42,8 +49,7 @@ Once we're in the directory, *if you want to debug the project*, you must allow 
 add-auto-load-safe-path DIRECTORY_WHERE_CLONE/lygos
 ```
 
-<details>
-<summary>Where is my `gdbinit` file ?</summary>
+#### Where is my gdbinit file ?
 
 The searched locations for `gdbinit` config file are the following :
 
@@ -54,15 +60,13 @@ The searched locations for `gdbinit` config file are the following :
 
 Simply creating a file statisfying one of the above locations for your platforms containing the said line will allow gdb to run the `.gdbinit` file.
 
-</details>
-
 If you installed the `gdbinit` config file correctly, all you must do is simply run `gdb` in an another instance / window :
 ```sh
 gdb
 ```
 
 ## Bootloader
-The library, for the time being, depends on `Limine` for the bootloader of the OS. When time comes, I will replace `Limine` with my own bootloader, written in Zig as well.
+The library, for the time being, depends on [Limine](https://codeberg.org/Limine/Limine) for the bootloader of the OS. When time comes, I will replace Limine with my own bootloader, written in Zig as well.
 
 However, to not waste time on this, I will simpy use limine as a bootloader, letting the framebuffers and such to it.
 All of limine's logic is self-contained in `src/limine.zig`. The entrypoint is in `src/kernel.zig`.
