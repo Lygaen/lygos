@@ -41,7 +41,7 @@ pub fn build(b: *std.Build) void {
             .use_lld = true,
             .linkage = .static,
         });
-        kernel_exe.setLinkerScript(b.path("src/kernel.ld"));
+        kernel_exe.setLinkerScript(b.path("build/kernel.ld"));
 
         kernel_exe.link_z_max_page_size = 0x1000;
         kernel_exe.link_gc_sections = true;
@@ -62,7 +62,7 @@ fn genIso(b: *std.Build, kernel_exe: *std.Build.Step.Compile) void {
     const limine = b.dependency("limine", .{});
 
     // Install needed files in /boot/ directory
-    const limine_conf = b.addInstallFile(b.path("./limine.conf"), "./boot/limine/limine.conf");
+    const limine_conf = b.addInstallFile(b.path("build/limine.conf"), "./boot/limine/limine.conf");
     var i_step = &limine_conf.step;
 
     i_step.dependOn(&b.addInstallArtifact(kernel_exe, .{
@@ -171,6 +171,6 @@ fn qemuStep(b: *std.Build) void {
     }
 
     qemu_run.step.dependOn(b.getInstallStep());
-    const qemu_step = b.step("qemu", "Run the kernel via QEMU");
+    const qemu_step = b.step("run", "Run the kernel via QEMU");
     qemu_step.dependOn(&qemu_run.step);
 }
