@@ -2,12 +2,22 @@ const std = @import("std");
 
 const log = @import("../log.zig");
 const arch = @import("arch.zig");
+const gdt = @import("gdt.zig");
 
 const Entry = packed struct(u128) {
     offset_l: u16,
-    selector: u16,
+    selector: arch.CodeSegmentSelector,
     __1cero: u8,
-    flags: u8,
+    flags: packed struct {
+        gate_type: enum(u4) {
+            invalid = 0x00,
+            interrupt = 0xE,
+            trap = 0xF,
+        },
+        __cero: u1 = 0,
+        ring: arch.CPURing,
+        presence: bool,
+    },
     offset_m: u16,
     offset_h: u32,
     __2cero: u32,
@@ -84,14 +94,17 @@ pub fn registerEntry(index: ItemIndex, func: *const anyopaque) void {
 
     ptr.* = std.mem.zeroes(Entry);
 
-    ptr.selector = 0x28;
+    ptr.selector = .{
+        .descriptor_table = .global,
+        .requested_permissions = .kernel,
+        .index = @intFromEnum(gdt.Index.kernel_code),
+    };
 
-    // 0x8F -> trap, 0x8E -> int
-    if (index.isTrap()) {
-        ptr.flags = 0x8F;
-    } else {
-        ptr.flags = 0x8F;
-    }
+    ptr.flags = .{
+        .gate_type = if (index.isTrap()) .trap else .interrupt,
+        .presence = true,
+        .ring = .kernel,
+    };
 
     ptr.offset_l = @truncate(addr);
     ptr.offset_m = @truncate(addr >> 16);

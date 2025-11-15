@@ -1,5 +1,21 @@
 const log = @import("../log.zig");
 
+pub const CPURing = enum(u2) {
+    kernel = 0,
+    device_low = 1,
+    device_high = 2,
+    user = 3,
+};
+
+pub const CodeSegmentSelector = packed struct(u16) {
+    requested_permissions: CPURing,
+    descriptor_table: enum(u1) {
+        global,
+        interrupt,
+    },
+    index: u13,
+};
+
 pub fn hcf() noreturn {
     log.debug("Reached halt and catch fire", .{});
     while (true) {
@@ -9,6 +25,15 @@ pub fn hcf() noreturn {
 
 pub fn loadIDT(addr: usize) void {
     asm volatile ("lidt (%[val])"
+        :
+        : [val] "rbx" (addr),
+        : .{
+          .memory = true,
+        });
+}
+
+pub fn loadGDT(addr: usize) void {
+    asm volatile ("lgdt (%[val])"
         :
         : [val] "rbx" (addr),
         : .{

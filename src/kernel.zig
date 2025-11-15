@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const arch = @import("internals/arch.zig");
+const gdt = @import("internals/gdt.zig");
 const idt = @import("internals/idt.zig");
 const limine = @import("limine.zig");
 const log = @import("log.zig");
@@ -19,6 +20,8 @@ pub export fn _start() noreturn {
 
     const fb = has_framebuffers.?[0];
 
+    arch.disableInterrupts();
+    gdt.load();
     idt.load();
     arch.enableInterrupt();
 
