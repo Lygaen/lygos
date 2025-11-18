@@ -155,6 +155,8 @@ fn interruptHandler(comptime index: ItemIndex) *const anyopaque {
 
 var __idt_register: LIDTPayload = undefined;
 pub fn load() void {
+    log.debug("Setting up idt entries", .{});
+
     inline for (@typeInfo(ItemIndex).@"enum".fields) |field| {
         const val: ItemIndex = @enumFromInt(field.value);
 

@@ -24,6 +24,7 @@ pub fn hcf() noreturn {
 }
 
 pub fn loadIDT(addr: usize) void {
+    log.debug("Loading IDT from 0x{X:0>16}", .{addr});
     asm volatile ("lidt (%[val])"
         :
         : [val] "rbx" (addr),
@@ -33,6 +34,7 @@ pub fn loadIDT(addr: usize) void {
 }
 
 pub fn loadGDT(addr: usize) void {
+    log.debug("Loading GDT from 0x{X:0>16}", .{addr});
     asm volatile ("lgdt (%[val])"
         :
         : [val] "rbx" (addr),
@@ -42,9 +44,11 @@ pub fn loadGDT(addr: usize) void {
 }
 
 pub fn enableInterrupt() void {
+    log.debug("Enabling interrupts", .{});
     asm volatile ("sti");
 }
 
 pub fn disableInterrupts() void {
+    log.debug("Disabling interrupts", .{});
     asm volatile ("cli");
 }
