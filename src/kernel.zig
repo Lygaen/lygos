@@ -1,5 +1,6 @@
 const std = @import("std");
 
+const FBRenderer = @import("gui/fb_renderer.zig");
 const arch = @import("internals/arch.zig");
 const gdt = @import("internals/gdt.zig");
 const idt = @import("internals/idt.zig");
@@ -25,11 +26,10 @@ pub export fn _start() noreturn {
     idt.load();
     arch.enableInterrupt();
 
-    { // Trigger a division by zero
-        @setRuntimeSafety(false);
-        const i = fb.width / (fb.width - fb.width);
-        _ = i;
-    }
+    var renderer: FBRenderer = .init(fb.address, fb.width, fb.height, fb.bpp, fb.pitch);
 
-    @panic("Kernel finished execution");
+    renderer.clear(null);
+    renderer.put_string("This is a\ntest string");
+
+    arch.hcf();
 }
